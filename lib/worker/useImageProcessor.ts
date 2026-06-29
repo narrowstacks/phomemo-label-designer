@@ -7,7 +7,7 @@ import type { WorkerRequest, WorkerResponse } from "./protocol";
 export function useImageProcessor() {
   const workerRef = useRef<Worker | null>(null);
   const idRef = useRef(0);
-  const pending = useRef<Map<number, (img: ImageData) => void>>(new Map());
+  const pending = useRef<Map<number, (img: ImageData | null) => void>>(new Map());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -23,17 +23,21 @@ export function useImageProcessor() {
       }
     };
     workerRef.current = worker;
-    return () => worker.terminate();
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      worker.terminate();
+    };
   }, []);
 
   const process = useCallback((img: ImageData, options: ProcessingOptions) => {
-    return new Promise<ImageData>((resolve) => {
+    return new Promise<ImageData | null>((resolve) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
         const worker = workerRef.current;
         if (!worker) return;
         const id = ++idRef.current;
-        // latest-wins: drop all older pending resolvers
+        // latest-wins: settle superseded resolvers with null so they don't hang
+        for (const oldResolve of pending.current.values()) oldResolve(null);
         pending.current.clear();
         pending.current.set(id, resolve);
         const buffer = img.data.buffer.slice(0); // copy so caller's ImageData stays valid

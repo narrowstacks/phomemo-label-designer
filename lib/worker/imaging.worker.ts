@@ -11,5 +11,5 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
     height: out.height,
     buffer: out.data.buffer as ArrayBuffer,
   };
-  (self as unknown as Worker).postMessage(response, [out.data.buffer]);
+  (self as DedicatedWorkerGlobalScope).postMessage(response, [out.data.buffer]);
 };
