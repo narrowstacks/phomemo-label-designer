@@ -20,6 +20,13 @@ export function useImageProcessor() {
         resolve(new ImageData(new Uint8ClampedArray(buffer), width, height));
       }
     };
+    // If the worker fails (failed to load, or runPipeline throws), don't leave
+    // callers hanging: settle every pending request with null and log it.
+    worker.onerror = (e) => {
+      console.error("Imaging worker error:", e.message || e);
+      for (const resolve of pending.current.values()) resolve(null);
+      pending.current.clear();
+    };
     workerRef.current = worker;
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -32,7 +39,10 @@ export function useImageProcessor() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
         const worker = workerRef.current;
-        if (!worker) return;
+        if (!worker) {
+          resolve(null); // don't leave the caller hanging if the worker is gone
+          return;
+        }
         const id = ++idRef.current;
         // latest-wins: settle superseded resolvers with null so they don't hang
         for (const oldResolve of pending.current.values()) oldResolve(null);
