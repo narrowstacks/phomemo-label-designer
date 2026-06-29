@@ -16,6 +16,7 @@
 - Dithering/filter math is ported function-for-function from the existing `index.js`; no algorithmic changes.
 - Pure imaging functions in `lib/imaging/` must be worker-safe: they operate only on `ImageData`-shaped objects (`{ data, width, height }`) and `Uint8ClampedArray`/typed arrays. They must NOT touch `document`, `window`, or create canvases. All canvas/DOM work stays on the main thread.
 - Node version: 20+. Package manager: npm.
+- Use the latest stable versions of all dependencies, including **Tailwind CSS v4** (CSS-first config via `@import "tailwindcss"` and the `@tailwindcss/postcss` plugin). (Task 1 originally scaffolded Tailwind v3; Task 2 migrates to v4 per this constraint.)
 - Source-of-truth line references below point at the pre-conversion files (`index.js`, `src/printer.js`, `index.html`) on the `nextjs-conversion` branch.
 
 ---
@@ -268,6 +269,8 @@ git commit -m "chore: scaffold Next.js + TS + Tailwind + Vitest"
 ```
 
 ---
+
+> **Revised during execution:** The user opted for latest packages including Tailwind CSS v4. This task now also migrates Tailwind v3 → v4 (swap to `@tailwindcss/postcss`, `app/globals.css` uses `@import "tailwindcss"`, drop the v3 `tailwind.config.ts`/`@tailwind` directives) before running shadcn (which is v4-aware). The component set, `<Toaster />` mount, and acceptance bar (clean `npm run build` emitting `out/`) are unchanged. See `.superpowers/sdd/task-2-brief.md` for the exact migration steps used.
 
 ## Task 2: Install shadcn/ui primitives
 
