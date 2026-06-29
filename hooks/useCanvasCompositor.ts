@@ -131,7 +131,8 @@ export function useCanvasCompositor(canvasRef: RefObject<HTMLCanvasElement | nul
   // Apply canvas pixel + CSS display sizing — ported from index.js:1103-1133.
   // Image sent to printer is printed top to bottom, so width/height are reversed:
   // canvas pixel width = labelHeight*8, pixel height = labelWidth*8.
-  function applyCanvasSize(canvas: HTMLCanvasElement) {
+  // Accepts live state explicitly so async callers (Effects 1/2) paint with current values.
+  function applyCanvasSize(canvas: HTMLCanvasElement, s: { labelHeight: number; labelWidth: number }) {
     const actualCanvasWidth = s.labelHeight * 8;
     const actualCanvasHeight = s.labelWidth * 8;
 
@@ -179,8 +180,12 @@ export function useCanvasCompositor(canvasRef: RefObject<HTMLCanvasElement | nul
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Read live state at call time so async resolutions (Effects 1/2) always paint
+    // with the current settings rather than the stale render-closure values.
+    const s = useSettings.getState();
+
     // Keep canvas sizing in sync (index.js:1103-1133).
-    applyCanvasSize(canvas);
+    applyCanvasSize(canvas, s);
 
     const text = s.text;
     const fontSize = s.fontSize;
