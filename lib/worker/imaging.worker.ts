@@ -1,4 +1,4 @@
-import { runPipeline } from "@/lib/imaging/pipeline";
+import { runPipeline } from "../imaging/pipeline";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {

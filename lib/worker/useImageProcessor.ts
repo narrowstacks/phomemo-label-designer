@@ -11,9 +11,7 @@ export function useImageProcessor() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const worker = new Worker(new URL("./imaging.worker.ts", import.meta.url), {
-      type: "module",
-    });
+    const worker = new Worker("/imaging.worker.js", { type: "module" });
     worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
       const { id, width, height, buffer } = e.data;
       const resolve = pending.current.get(id);
