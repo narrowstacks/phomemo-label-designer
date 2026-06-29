@@ -84,12 +84,21 @@ export default function PreviewPanel() {
           </Button>
         </div>
 
-        {/* Canvas preview */}
-        <div className="border rounded p-1">
-          <canvas
-            ref={canvasRef}
-            className={`[image-rendering:pixelated] ${cssRotation[norm] ?? ""}`}
-          />
+        {/* Canvas preview.
+            The stage gives a stable area to measure available space; the inner
+            wrapper is sized by the compositor to the rotated label's footprint
+            and centers the canvas, which is rotated purely in CSS. */}
+        <div
+          data-preview-stage
+          className="flex w-full items-center justify-center"
+          style={{ minHeight: 240 }}
+        >
+          <div className="inline-flex items-center justify-center rounded border">
+            <canvas
+              ref={canvasRef}
+              className={`block [image-rendering:pixelated] ${cssRotation[norm] ?? ""}`}
+            />
+          </div>
         </div>
 
         {/* Connect & print */}

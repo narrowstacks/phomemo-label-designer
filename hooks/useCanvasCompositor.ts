@@ -132,7 +132,10 @@ export function useCanvasCompositor(canvasRef: RefObject<HTMLCanvasElement | nul
   // Image sent to printer is printed top to bottom, so width/height are reversed:
   // canvas pixel width = labelHeight*8, pixel height = labelWidth*8.
   // Accepts live state explicitly so async callers (Effects 1/2) paint with current values.
-  function applyCanvasSize(canvas: HTMLCanvasElement, s: { labelHeight: number; labelWidth: number }) {
+  function applyCanvasSize(
+    canvas: HTMLCanvasElement,
+    s: { labelHeight: number; labelWidth: number; previewRotation: number }
+  ) {
     const actualCanvasWidth = s.labelHeight * 8;
     const actualCanvasHeight = s.labelWidth * 8;
 
@@ -140,37 +143,48 @@ export function useCanvasCompositor(canvasRef: RefObject<HTMLCanvasElement | nul
     canvas.width = actualCanvasWidth;
     canvas.height = actualCanvasHeight;
 
-    // Reset canvas display size so container can expand before measuring
+    // Reset canvas display size so the stage can be measured cleanly.
     canvas.style.width = "";
     canvas.style.height = "";
 
-    // Calculate display size to maintain consistent preview height
-    const previewContainer = canvas.parentElement;
-    const containerHeight = previewContainer?.clientHeight || 300;
-    const containerWidth = previewContainer?.clientWidth || 300;
+    // previewRotation is a purely visual CSS rotation (applied to the canvas in
+    // PreviewPanel). When the label is shown on its side (90/270) its on-screen
+    // footprint is the canvas dimensions swapped — we must size for that so the
+    // bordered frame wraps the rotated label and the layout reserves the right
+    // space.
+    const norm = ((s.previewRotation % 360) + 360) % 360;
+    const rotated = norm === 90 || norm === 270;
 
-    // Determine an integer scale factor (nearest-neighbour) so that each canvas
-    // pixel maps to an integer number of screen pixels.
-    const scaleX = Math.floor(containerWidth / actualCanvasWidth);
-    const scaleY = Math.floor(containerHeight / actualCanvasHeight);
-    let scale = Math.max(1, Math.min(scaleX, scaleY));
+    // Available space comes from a stable stage element, NOT the wrapper we
+    // resize below (measuring that would feed back into the scale).
+    const stage = canvas.closest("[data-preview-stage]") as HTMLElement | null;
+    const availWidth = stage?.clientWidth || 300;
+    const availHeight = stage?.clientHeight || 300;
 
-    // Fallback to fractional scaling (with pixelated rendering) if the canvas is
-    // larger than the container in both directions.
-    if (scaleX === 0 && scaleY === 0) {
-      scale = Math.min(
-        containerWidth / actualCanvasWidth,
-        containerHeight / actualCanvasHeight
-      );
-    }
+    // On-screen footprint after rotation — this is what must fit the stage.
+    const footprintWidth = rotated ? actualCanvasHeight : actualCanvasWidth;
+    const footprintHeight = rotated ? actualCanvasWidth : actualCanvasHeight;
 
-    const displayWidth = actualCanvasWidth * scale;
-    const displayHeight = actualCanvasHeight * scale;
+    // Crisp integer (nearest-neighbour) scale when there's room; shrink
+    // fractionally when the rotated label is larger than the stage.
+    const fitScale = Math.min(
+      availWidth / footprintWidth,
+      availHeight / footprintHeight
+    );
+    const scale = fitScale >= 1 ? Math.floor(fitScale) : fitScale;
 
-    canvas.style.width = displayWidth + "px";
-    canvas.style.height = displayHeight + "px";
-    // Ensure nearest-neighbour scaling is used when the browser rasterises the canvas element
+    canvas.style.width = actualCanvasWidth * scale + "px";
+    canvas.style.height = actualCanvasHeight * scale + "px";
+    // Nearest-neighbour scaling so the 1-bit preview stays crisp.
     canvas.style.imageRendering = "pixelated";
+
+    // Size the bordered wrapper to the rotated bounding box so the frame matches
+    // the visible (rotated) label and reserves correct layout space.
+    const wrapper = canvas.parentElement;
+    if (wrapper) {
+      wrapper.style.width = footprintWidth * scale + "px";
+      wrapper.style.height = footprintHeight * scale + "px";
+    }
   }
 
   // Compositing + positioning — ported from index.js:1146-1392 (updateCanvasText),
