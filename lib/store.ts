@@ -52,9 +52,12 @@ export interface SettingsState {
   offsetStep: number;
   previewRotation: number;
   // actions
-  set: <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => void;
+  set: <K extends SettingsKey>(key: K, value: SettingsState[K]) => void;
   resetOffset: () => void;
 }
+
+/** Keys of the data fields only — excludes the action methods. */
+export type SettingsKey = Exclude<keyof SettingsState, "set" | "resetOffset">;
 
 const initial = {
   text: "Hello world",
