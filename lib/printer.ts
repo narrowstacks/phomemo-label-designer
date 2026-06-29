@@ -1,3 +1,5 @@
+/// <reference types="web-bluetooth" />
+
 const PACKET_SIZE_BYTES = 128;
 
 const PRINT_SERVICE = "0000ff00-0000-1000-8000-00805f9b34fb";
@@ -65,13 +67,13 @@ export async function printCanvas(
   const bytesPerRow = canvas.width / 8;
 
   await characteristic.writeValueWithResponse(
-    buildHeader(bytesPerRow, printData.length / bytesPerRow)
+    buildHeader(bytesPerRow, printData.length / bytesPerRow) as BufferSource
   );
 
   for (let i = 0; i < printData.length; i += PACKET_SIZE_BYTES) {
     const chunk = printData.slice(i, i + PACKET_SIZE_BYTES);
-    await characteristic.writeValueWithResponse(chunk);
+    await characteristic.writeValueWithResponse(chunk as BufferSource);
   }
 
-  await characteristic.writeValueWithResponse(END_DATA);
+  await characteristic.writeValueWithResponse(END_DATA as BufferSource);
 }
