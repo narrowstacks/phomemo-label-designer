@@ -372,11 +372,11 @@ describe("getWhitePixel", () => {
     const { width, data } = makeCanvas([[0]]);
     expect(getWhitePixel(width, data, 0, 0)).toBe(0);
   });
-  it("uses a 384 threshold on R+G+B", () => {
+  it("uses a strict > 384 threshold on R+G+B (faithful to src/printer.js)", () => {
     const width = 1;
-    const data = new Uint8ClampedArray([128, 128, 128, 255]); // sum 384 -> white
+    const data = new Uint8ClampedArray([129, 128, 128, 255]); // sum 385 -> white
     expect(getWhitePixel(width, data, 0, 0)).toBe(0);
-    const data2 = new Uint8ClampedArray([127, 128, 128, 255]); // sum 383 -> black
+    const data2 = new Uint8ClampedArray([128, 128, 128, 255]); // sum 384 -> black
     expect(getWhitePixel(width, data2, 0, 0)).toBe(1);
   });
 });

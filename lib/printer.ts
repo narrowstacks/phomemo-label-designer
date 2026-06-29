@@ -23,7 +23,9 @@ export function getWhitePixel(
 ): 0 | 1 {
   const i = (width * y + x) * 4;
   const sum = imageData[i] + imageData[i + 1] + imageData[i + 2];
-  return sum >= 384 ? 0 : 1;
+  // Faithful to the original: strictly greater-than 384 (128*3). A pixel at
+  // exactly mid-gray (sum 384) prints black, matching src/printer.js.
+  return sum > 384 ? 0 : 1;
 }
 
 export function getPrintData(canvas: {
